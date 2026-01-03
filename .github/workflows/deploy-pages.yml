@@ -53,7 +53,7 @@ jobs:
         if: github.ref == 'refs/heads/main'
         run: |
           mkdir -p dist-final
-          cp -r dist/* dist-final/
+          cp -r slides/dist/* dist-final/
           
           # Create root index.html that lists all available versions
           cat > dist-final/index.html << 'EOF'
@@ -147,7 +147,7 @@ jobs:
         run: |
           PR_NUMBER=${{ github.event.pull_request.number }}
           mkdir -p dist-final/pr-${PR_NUMBER}
-          cp -r dist/* dist-final/pr-${PR_NUMBER}/
+          cp -r slides/dist/* dist-final/pr-${PR_NUMBER}/
           
           # Create index for PR preview
           cat > dist-final/pr-${PR_NUMBER}/preview.html << EOF

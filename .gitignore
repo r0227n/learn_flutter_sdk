@@ -3,11 +3,13 @@ node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+package-lock.json
 
 # Slidev
 .slidev/
 dist/
 .output/
+slides/dist/
 
 # Build outputs
 build/
