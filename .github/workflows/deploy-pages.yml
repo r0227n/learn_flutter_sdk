@@ -45,6 +45,7 @@ jobs:
         if: github.event_name == 'pull_request'
         run: |
           # PRの場合はPR番号をベースパスに含める
+          # npm scriptsは動的なbase pathを受け付けないため、npx slidevを直接使用
           PR_NUMBER=${{ github.event.pull_request.number }}
           npx slidev build slides/index.md --base /learn_flutter_sdk/pr-${PR_NUMBER}/ --out dist
           echo "Built for PR #${PR_NUMBER} with base path /learn_flutter_sdk/pr-${PR_NUMBER}/"
