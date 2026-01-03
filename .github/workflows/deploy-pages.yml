@@ -1,0 +1,289 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    types: [opened, synchronize, reopened]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+  pull-requests: write
+
+concurrency:
+  group: "pages-${{ github.ref }}"
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Build Slidev for main branch
+        if: github.ref == 'refs/heads/main'
+        run: |
+          npm run build
+          echo "Built for main branch with base path /learn_flutter_sdk/"
+      
+      - name: Build Slidev for PR
+        if: github.event_name == 'pull_request'
+        run: |
+          # PRの場合はPR番号をベースパスに含める
+          PR_NUMBER=${{ github.event.pull_request.number }}
+          npx slidev build slides/index.md --base /learn_flutter_sdk/pr-${PR_NUMBER}/ --out dist
+          echo "Built for PR #${PR_NUMBER} with base path /learn_flutter_sdk/pr-${PR_NUMBER}/"
+      
+      - name: Create index page for main
+        if: github.ref == 'refs/heads/main'
+        run: |
+          mkdir -p dist-final
+          cp -r dist/* dist-final/
+          
+          # Create root index.html that lists all available versions
+          cat > dist-final/index.html << 'EOF'
+          <!DOCTYPE html>
+          <html lang="ja">
+          <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Flutter SDK Learning - Slidev Presentations</title>
+            <style>
+              body {
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+                max-width: 800px;
+                margin: 0 auto;
+                padding: 2rem;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                min-height: 100vh;
+              }
+              .container {
+                background: white;
+                border-radius: 12px;
+                padding: 2rem;
+                box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+              }
+              h1 {
+                color: #333;
+                margin-bottom: 0.5rem;
+              }
+              .subtitle {
+                color: #666;
+                margin-bottom: 2rem;
+              }
+              .link-section {
+                margin: 2rem 0;
+              }
+              .link-section h2 {
+                color: #667eea;
+                font-size: 1.2rem;
+                margin-bottom: 1rem;
+              }
+              a {
+                display: block;
+                padding: 1rem;
+                margin: 0.5rem 0;
+                background: #f7fafc;
+                border-radius: 8px;
+                color: #667eea;
+                text-decoration: none;
+                transition: all 0.3s;
+                border-left: 4px solid #667eea;
+              }
+              a:hover {
+                background: #edf2f7;
+                transform: translateX(4px);
+              }
+              .footer {
+                margin-top: 2rem;
+                padding-top: 2rem;
+                border-top: 1px solid #e2e8f0;
+                color: #666;
+                font-size: 0.9rem;
+              }
+            </style>
+          </head>
+          <body>
+            <div class="container">
+              <h1>📚 Flutter SDK Learning</h1>
+              <p class="subtitle">Slidev Presentations for Flutter SDK v1.16.3</p>
+              
+              <div class="link-section">
+                <h2>🎬 Main Presentation</h2>
+                <a href="./index.html">View Main Slides →</a>
+              </div>
+              
+              <div class="link-section">
+                <h2>📖 Resources</h2>
+                <a href="https://github.com/r0227n/learn_flutter_sdk" target="_blank">GitHub Repository →</a>
+                <a href="https://github.com/flutter/flutter/tree/v1.16.3" target="_blank">Flutter SDK v1.16.3 →</a>
+              </div>
+              
+              <div class="footer">
+                <p>このサイトは週次で自動更新されます。最新の学習コンテンツをお楽しみください。</p>
+              </div>
+            </div>
+          </body>
+          </html>
+          EOF
+      
+      - name: Setup PR preview structure
+        if: github.event_name == 'pull_request'
+        run: |
+          PR_NUMBER=${{ github.event.pull_request.number }}
+          mkdir -p dist-final/pr-${PR_NUMBER}
+          cp -r dist/* dist-final/pr-${PR_NUMBER}/
+          
+          # Create index for PR preview
+          cat > dist-final/pr-${PR_NUMBER}/preview.html << EOF
+          <!DOCTYPE html>
+          <html lang="ja">
+          <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>PR #${PR_NUMBER} Preview - Flutter SDK Learning</title>
+            <style>
+              body {
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+                max-width: 800px;
+                margin: 0 auto;
+                padding: 2rem;
+                background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+                min-height: 100vh;
+              }
+              .container {
+                background: white;
+                border-radius: 12px;
+                padding: 2rem;
+                box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+              }
+              h1 { color: #333; }
+              .badge {
+                display: inline-block;
+                padding: 0.25rem 0.75rem;
+                background: #f5576c;
+                color: white;
+                border-radius: 12px;
+                font-size: 0.8rem;
+                margin-bottom: 1rem;
+              }
+              a {
+                display: block;
+                padding: 1rem;
+                margin: 1rem 0;
+                background: #f7fafc;
+                border-radius: 8px;
+                color: #f5576c;
+                text-decoration: none;
+                transition: all 0.3s;
+              }
+              a:hover {
+                background: #edf2f7;
+                transform: translateX(4px);
+              }
+            </style>
+          </head>
+          <body>
+            <div class="container">
+              <span class="badge">PR Preview</span>
+              <h1>PR #${PR_NUMBER} Preview</h1>
+              <p>このPRで追加・変更されたスライドのプレビューです。</p>
+              <a href="./index.html">View PR Slides →</a>
+              <a href="https://github.com/r0227n/learn_flutter_sdk/pull/${PR_NUMBER}" target="_blank">View PR on GitHub →</a>
+            </div>
+          </body>
+          </html>
+          EOF
+      
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist-final
+
+  deploy:
+    if: github.ref == 'refs/heads/main'
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+      
+      - name: Comment deployment URL
+        if: success()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const url = '${{ steps.deployment.outputs.page_url }}';
+            console.log(`Deployed to: ${url}`);
+  
+  comment-pr-preview:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    needs: build
+    
+    steps:
+      - name: Comment PR with preview link
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const prNumber = context.payload.pull_request.number;
+            const previewUrl = `https://r0227n.github.io/learn_flutter_sdk/pr-${prNumber}/preview.html`;
+            
+            const comment = `## 🎬 Slidev Preview
+            
+            このPRのスライドプレビューが利用可能です：
+            
+            🔗 [View PR Preview](${previewUrl})
+            
+            > **Note**: PRプレビューは参考用です。マージ後、メインサイトに統合されます。
+            `;
+            
+            // Find existing comment
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: prNumber,
+            });
+            
+            const botComment = comments.find(comment => 
+              comment.user.type === 'Bot' && 
+              comment.body.includes('🎬 Slidev Preview')
+            );
+            
+            if (botComment) {
+              // Update existing comment
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: comment
+              });
+            } else {
+              // Create new comment
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: prNumber,
+                body: comment
+              });
+            }

@@ -1,0 +1,101 @@
+name: Weekly Flutter Learning Automation
+
+on:
+  schedule:
+    # 毎週月曜日の午前9時 (JST) に実行 = 毎週日曜日の午前0時 (UTC)
+    - cron: '0 0 * * 0'
+  workflow_dispatch: # 手動実行も可能
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+jobs:
+  process-todo:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Read TODO and create task
+        id: read-todo
+        run: |
+          # todo.mdから最初の未完了TODOを取得
+          TODO_LINE=$(grep -n "^- \[ \]" todo.md | head -1)
+          if [ -z "$TODO_LINE" ]; then
+            echo "No pending TODOs found"
+            echo "has_todo=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          
+          LINE_NUM=$(echo "$TODO_LINE" | cut -d: -f1)
+          TODO_TEXT=$(echo "$TODO_LINE" | cut -d: -f2- | sed 's/^- \[ \] //')
+          
+          echo "has_todo=true" >> $GITHUB_OUTPUT
+          echo "todo_text=$TODO_TEXT" >> $GITHUB_OUTPUT
+          echo "line_num=$LINE_NUM" >> $GITHUB_OUTPUT
+          
+          # タスクの説明をファイルに保存
+          echo "$TODO_TEXT" > /tmp/current_task.txt
+          echo "Found TODO: $TODO_TEXT"
+      
+      - name: Process TODO with Claude Code Action
+        if: steps.read-todo.outputs.has_todo == 'true'
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          instructions: |
+            Read the task from /tmp/current_task.txt and perform the following:
+            
+            1. If the task mentions specific Flutter SDK files (e.g., lib/src/widgets/framework.dart):
+               - Analyze the file structure and key components
+               - Identify dependencies and relationships with other files
+               - Create a detailed Markdown document in docs/ directory explaining:
+                 * File purpose and overview
+                 * Key classes, functions, and their roles
+                 * Dependencies and how they interact
+                 * Code examples and usage patterns
+            
+            2. Create a Slidev presentation in slides/ directory:
+               - Add new slides to slides/index.md or create a new slide file
+               - Include diagrams and code snippets
+               - Explain the concepts in a clear, visual way
+            
+            3. Update todo.md:
+               - Mark the current TODO as completed [x]
+               - Move it to the "完了したTODO" section
+            
+            The task to process is: ${{ steps.read-todo.outputs.todo_text }}
+          
+          create_pr: true
+          pr_title: "📚 Flutter Learning: ${{ steps.read-todo.outputs.todo_text }}"
+          pr_body: |
+            ## 自動生成されたFlutter学習コンテンツ
+            
+            ### 処理されたTODO
+            ${{ steps.read-todo.outputs.todo_text }}
+            
+            ### 変更内容
+            - 新しいMarkdownドキュメントの追加
+            - Slidevスライドの更新
+            - TODO リストの更新
+            
+            このPRは週次自動化ワークフローによって生成されました。
+            レビュー後、マージしてください。
+            
+            ### プレビュー
+            このPRがマージされると、GitHub Pagesでスライドを確認できます。
