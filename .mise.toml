@@ -1,0 +1,5 @@
+# mise configuration for bun version management
+# See: https://mise.jdx.dev/
+
+[tools]
+bun = "latest"
