@@ -39,7 +39,7 @@ Learning Flutter SDK v1.16.3 through component analysis
 <br>
 <br>
 
-詳細は [GitHub Pages](https://r0227n.github.io/learn_flutter_sdk/) をご覧ください。
+詳細は [GitHub Repository](https://github.com/r0227n/learn_flutter_sdk) をご覧ください。
 
 ---
 
