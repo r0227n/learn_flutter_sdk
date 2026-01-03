@@ -52,10 +52,10 @@ jobs:
       - name: Create index page for main
         if: github.ref == 'refs/heads/main'
         run: |
-          mkdir -p dist-final
-          cp -r slides/dist/* dist-final/
+          mkdir -p dist-final/slides
+          cp -r slides/dist/* dist-final/slides/
           
-          # Create root index.html that lists all available versions
+          # Create root index.html as a landing page
           cat > dist-final/index.html << 'EOF'
           <!DOCTYPE html>
           <html lang="ja">
@@ -125,7 +125,7 @@ jobs:
               
               <div class="link-section">
                 <h2>🎬 Main Presentation</h2>
-                <a href="./index.html">View Main Slides →</a>
+                <a href="./slides/">View Main Slides →</a>
               </div>
               
               <div class="link-section">

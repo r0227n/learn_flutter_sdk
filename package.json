@@ -4,7 +4,7 @@
   "description": "Learning repository for Flutter SDK with Slidev presentations",
   "scripts": {
     "dev": "slidev slides/index.md --open",
-    "build": "slidev build slides/index.md --base /learn_flutter_sdk/ --out dist",
+    "build": "slidev build slides/index.md --base /learn_flutter_sdk/slides/ --out dist",
     "build:pr": "slidev build slides/index.md --out dist",
     "export": "slidev export slides/index.md"
   },

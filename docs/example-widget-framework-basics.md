@@ -153,6 +153,6 @@ class _CounterState extends State<Counter> {
 
 ---
 
-**生成日時**: 2026-01-03
+**生成日時**: 自動生成時に設定されます
 **Flutter バージョン**: v1.16.3
 **自動生成**: GitHub Actions + Claude Code Action
